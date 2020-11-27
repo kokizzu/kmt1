@@ -1,0 +1,11 @@
+version: '3.2'
+
+services:
+  tarantool:
+    image: tarantool/tarantool
+    ports:
+      - "3302:3301"
+  meilisearch:
+    image: getmeili/meilisearch
+    ports:
+      - "7700:7700"
