@@ -1,7 +1,7 @@
 
-# README
+# KMT1
 
-test meilisearch and tarantool using go
+evaluating meilisearch and tarantool with go
 
 ```
 cd $GOPATH
@@ -46,21 +46,22 @@ curl -X GET 'http://localhost:7700/indexes/articles/updates'
 - [x] add apitest search article positive body
 - [x] add apitest search article positive author
 - [x] add apitest search article cached
+- [x] add DEBUG flag to print debugging handler
+- [ ] add DEBUG flag for model
 - [ ] add autorecompile
 - [ ] add autoupdater
 - [ ] add requeue when meilisearch failed
 - [ ] add bucketed cache (so no need to expire all cache when record upserted)
-- [ ] bugfix error migration if running first time [issue-ref](https://github.com/tarantool/go-tarantool/issues/94)
+- [ ] bugfix error migration if running first time [github-issue](https://github.com/tarantool/go-tarantool/issues/94)
 - [ ] make functions to simplify CRUD operations 
-- [x] set flag to print debugging (handler.DEBUG)
 - [ ] add expiration daemon (so can have TTL like redis/aerospike)
 - [ ] expire the search cache
-- [ ] wait for index to be created in test if test executed for the first time [issue-ref](https://github.com/meilisearch/meilisearch-go/issues/108), workaround: create an empty document for the first time (so search engine know what's the columns)
-- [ ] add more DEBUG flags before production
+- [ ] wait for index to be created in test if test executed for the first time [github-issue](https://github.com/meilisearch/meilisearch-go/issues/108), workaround: create an empty document for the first time (so search engine know what are the columns)
+- [ ] try [sonic](https://github.com/valeriansaliou/sonic) search engine
 
 ## dependencies
 
-- fiber (framework that use one of the fastest router/fasthttp)
-- tarantool (works as cache and also dbms -- automatically caches per record -- not used in this case, because using search engine)
-- meilisearch (one of the fastest single server search engine)
-- jsoniter (fastest std-compatible json converter)
+- [fiber](https://gofiber.io/) framework that use one of the fastest router: fasthttp)
+- [tarantool](https://www.tarantool.io/en/) works as cache and also DBMS (support SQL and WAL by default) automatically caches per record -- not used in this case, because the read/query part fetched from search engine
+- [meilisearch]() (one of the fastest search engine for small data sets)
+- [jsoniter](https://github.com/json-iterator/go) (fastest std-compatible json converter)
