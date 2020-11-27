@@ -14,13 +14,13 @@ docker-compose up
 # run server 
 go run main.go
 
-# test server (start the server first)
+# test APIs (start the server first)
 go test
 
 # access tarantool
 tarantoolctl connect localhost:3302
 
-# check updates
+# check search engine update status
 curl -X GET 'http://localhost:7700/indexes/articles/updates'
 ```
 
@@ -51,12 +51,12 @@ curl -X GET 'http://localhost:7700/indexes/articles/updates'
 - [ ] add requeue when meilisearch failed
 - [ ] add bucketed cache (so no need to expire all cache when record upserted)
 - [ ] bugfix error migration if running first time [issue-ref](https://github.com/tarantool/go-tarantool/issues/94)
-- [ ] create methods to simplify CRUD operations 
+- [ ] make functions to simplify CRUD operations 
 - [x] set flag to print debugging (handler.DEBUG)
-- [ ] expire the search cache
-- [ ] wait for index to be created in test [issue-ref](https://github.com/meilisearch/meilisearch-go/issues/108), workaround: create an empty document for the first time
-- [ ] add more DEBUG flags before production
 - [ ] add expiration daemon (so can have TTL like redis/aerospike)
+- [ ] expire the search cache
+- [ ] wait for index to be created in test if test executed for the first time [issue-ref](https://github.com/meilisearch/meilisearch-go/issues/108), workaround: create an empty document for the first time (so search engine know what's the columns)
+- [ ] add more DEBUG flags before production
 
 ## dependencies
 
