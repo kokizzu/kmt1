@@ -1,8 +1,12 @@
 package handler
 
-import "github.com/gofiber/fiber"
+import (
+	"github.com/gofiber/fiber/v2"
+	"github.com/kokizzu/gotro/L"
+)
 
 const (
+	DEBUG   = true
 	Article = `/articles`
 )
 
@@ -12,9 +16,16 @@ type Ctx struct {
 	*fiber.Ctx
 }
 
-func (s *Server) Handler(handler func(ctx *Ctx) error) func(c *fiber.Ctx) {
-	return func(c *fiber.Ctx) {
-		handler(&Ctx{
+func (s *Server) Handler(handler func(ctx *Ctx) error) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		if DEBUG {
+			debugPrefix := string(c.Context().Method()) + ` ` + c.OriginalURL() + ` `
+			L.Print(debugPrefix + string(c.Body()))
+			defer (func() {
+				L.Print(debugPrefix + string(c.Response().Body()))
+			})()
+		}
+		return handler(&Ctx{
 			s,
 			c,
 		})

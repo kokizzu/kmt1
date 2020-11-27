@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/francoispqt/onelog"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"kmt1/config"
@@ -26,8 +26,6 @@ type Server struct {
 }
 
 func (s *Server) Start() {
-	s.App.Use(recover.New())
-	s.App.Use(logger.New())
 	s.Routes()
 	listenAddr := os.Getenv(config.ListenAddr)
 	log.Fatal(s.App.Listen(listenAddr).Error())
@@ -36,8 +34,11 @@ func (s *Server) Start() {
 func NewServer() *Server {
 	stor := config.InitStore()
 	model.InitDB(stor)
+	app := fiber.New()
+	app.Use(recover.New())
+	app.Use(logger.New())
 	return &Server{
-		App:   fiber.New(),
+		App:   app,
 		Store: stor,
 	}
 }

@@ -70,6 +70,12 @@ func postApi(t *testing.T, path string, jsonIn interface{}, c *http.Client, head
 	if err != nil {
 		t.Error(err)
 	}
+	if headers == nil {
+		headers = M.SS{}
+	}
+	if headers.GetStr(`content-type`) == `` {
+		headers[`content-type`] = `application/json`
+	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
@@ -82,7 +88,7 @@ func postApi(t *testing.T, path string, jsonIn interface{}, c *http.Client, head
 	return jsonOut
 }
 
-func getApi(t *testing.T, path string, c *http.Client, param M.SS, headers M.SS) A.MSX {
+func getApi(t *testing.T, path string, c *http.Client, param M.SS, headers M.SS) M.SX {
 	req, err := http.NewRequest(`GET`, URL+path+param2querystring(param), nil)
 	if err != nil {
 		t.Error(err)
@@ -94,14 +100,14 @@ func getApi(t *testing.T, path string, c *http.Client, param M.SS, headers M.SS)
 	if err != nil {
 		t.Error(err)
 	}
-	jsonOut := json2arr(res.Body)
+	jsonOut := json2map(res.Body)
 	fmt.Printf("%#v\n", jsonOut)
 	return jsonOut
 }
 
-func param2querystring(param M.SS) string {
+func param2querystring(params M.SS) string {
 	res := ``
-	for k, v := range param {
+	for k, v := range params {
 		if res == `` {
 			res += `?`
 		} else {
@@ -112,10 +118,13 @@ func param2querystring(param M.SS) string {
 	return res
 }
 
-func TestApis(t *testing.T) {
+func init() {
 	rand.Seed(time.Now().UnixNano())
-	URL = `http://` + os.Getenv(config.ListenAddr)
 	config.LoadEnv()
+	URL = `http://` + os.Getenv(config.ListenAddr)
+}
+
+func TestApis(t *testing.T) {
 	c := &http.Client{}
 
 	// HIT ARTICLE create
@@ -129,7 +138,7 @@ func TestApis(t *testing.T) {
 
 	articleId := articleOut.GetInt(`id`)
 	if articleId <= 0 {
-		t.Fatal(`failed create`)
+		t.Fatal(`failed create article`)
 	}
 
 	L.Describe(articleOut)
@@ -137,11 +146,74 @@ func TestApis(t *testing.T) {
 	compareString(t, `article author`, articleIn.Author, articleOut.GetStr(`author`))
 	compareString(t, `article body`, articleIn.Body, articleOut.GetStr(`body`))
 
-	// HIT ARTICLE search
+	// HIT ARTICLE search with things that not exists
 	searchIn := M.SS{
 		`query`: `aaaaaaaaaaaaaaaaaaaaaaaaa`,
 	}
 
 	searchOut := getApi(t, handler.Article, c, searchIn, nil)
-	L.Describe(searchOut)
+	hits := searchOut.GetAX(`hits`)
+	if len(hits) != 0 {
+		t.Fatal(`querying content ` + searchIn.GetStr(`query`) + ` should not exists, but got: ` + X.ToS(hits))
+	}
+
+	// HIT ARTICLE search with author that not exists
+	searchIn = M.SS{
+		`author`: `bbbbbbbbbbbbbb`,
+	}
+
+	searchOut = getApi(t, handler.Article, c, searchIn, nil)
+	hits = searchOut.GetAX(`hits`)
+	if len(hits) != 0 {
+		t.Fatal(`querying author ` + searchIn.GetStr(`author`) + ` should not exists, but got: ` + X.ToS(hits))
+	}
+
+	// HIT ARTICLE search without parameter
+	searchOut = getApi(t, handler.Article, c, nil, nil)
+	hits = searchOut.GetAX(`hits`)
+	if len(hits) == 0 {
+		t.Fatal(`querying without parameter should return at least 1 but no result`)
+	}
+
+	// HIT ARTICLE random body word of newly created
+	words := S.Split(articleIn.Body, ` `)
+	searchIn = M.SS{
+		`query`: words[rand.Int()%len(words)],
+	}
+	searchOut = getApi(t, handler.Article, c, searchIn, nil)
+	hits = searchOut.GetAX(`hits`)
+	if len(hits) == 0 {
+		t.Fatal(`querying existing body word should return at least 1, if failed probably index not yet created on search engine`)
+	}
+
+	// HIT ARTICLE random title word of newly created
+	words = S.Split(articleIn.Title, ` `)
+	searchIn = M.SS{
+		`query`: words[rand.Int()%len(words)],
+	}
+	searchOut = getApi(t, handler.Article, c, searchIn, nil)
+	hits = searchOut.GetAX(`hits`)
+	if len(hits) == 0 {
+		t.Fatal(`querying existing title word should return at least 1, if failed probably index not yet created on search engine`)
+	}
+
+	// HIT ARTICLE author of newly created
+	searchIn = M.SS{
+		`author`: articleIn.Author,
+	}
+	searchOut = getApi(t, handler.Article, c, searchIn, nil)
+	hits = searchOut.GetAX(`hits`)
+	if len(hits) == 0 {
+		t.Fatal(`querying existing author name should return at least 1, if failed probably index not yet created on search engine`)
+	}
+
+	// HIT ARTICLE author of newly created twice
+	searchIn = M.SS{
+		`author`: articleIn.Author,
+	}
+	searchOut = getApi(t, handler.Article, c, searchIn, nil)
+	hits = searchOut.GetAX(`hits`)
+	if len(hits) == 0 {
+		t.Fatal(`querying cached should return at least 1, =============== from cache should show on the server`)
+	}
 }

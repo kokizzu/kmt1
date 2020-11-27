@@ -1,13 +1,14 @@
-module taranmeili
+module kmt1
 
 go 1.14
 
 require (
+	github.com/bxcodec/faker/v3 v3.5.0
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/francoispqt/onelog v0.0.0-20190306043706-8c2bb31b10a4
-	github.com/gofiber/fiber v1.14.6
 	github.com/gofiber/fiber/v2 v2.2.1
 	github.com/joho/godotenv v1.3.0
+	github.com/json-iterator/go v1.1.10
 	github.com/kokizzu/gotro v0.0.0-20201113172705-deba55f21181
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/meilisearch/meilisearch-go v0.13.1
