@@ -45,6 +45,13 @@ func (c *Cache) Get(s *adapter.Taran, cacheKey string) string {
 	if L.IsError(err, `failed to get from cache`) {
 		return `[]`
 	}
-	L.Describe(res.Tuples())
-	return X.ToJson(res.Tuples())
+	matrix := res.Tuples()
+	if len(matrix) == 0 {
+		return `[]`
+	}
+	row := matrix[0]
+	if len(row) == 0 {
+		return `[]`
+	}
+	return X.ToS(row[0])
 }

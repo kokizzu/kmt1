@@ -9,6 +9,9 @@ func InitDB(s *config.Stor) error {
 	// tarantool
 	s.Taran.MigrateTarantool(ArticleSpace, ArticleTable)
 	s.Taran.MigrateTarantool(CacheSpace, CacheTable)
+	c := Cache{}
+	// clear all cache
+	c.ClearAll(s.Taran)
 
 	// meilisearch
 	rankingRules := []string{

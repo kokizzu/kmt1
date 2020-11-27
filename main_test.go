@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bxcodec/faker/v3"
 	"github.com/kokizzu/gotro/A"
+	"github.com/kokizzu/gotro/I"
 	"github.com/kokizzu/gotro/L"
 	"github.com/kokizzu/gotro/M"
 	"github.com/kokizzu/gotro/S"
@@ -13,6 +14,7 @@ import (
 	"kmt1/config"
 	"kmt1/handler"
 	"kmt1/model"
+	"math"
 	"math/rand"
 	"net/http"
 	"os"
@@ -174,6 +176,18 @@ func TestApis(t *testing.T) {
 	if len(hits) == 0 {
 		t.Fatal(`querying without parameter should return at least 1 but no result`)
 	}
+	lastCreated := int64(math.MaxInt64)
+	for _, v := range hits {
+		row := X.ToMSX(v)
+		created := row.GetInt(`created`)
+		if created > lastCreated {
+			t.Fatal(`should be ordered by newest article first, but ` + I.ToS(created) + ` > ` + I.ToS(lastCreated))
+		}
+		lastCreated = created
+	}
+
+	// hopefully the index already created
+	time.Sleep(1 * time.Second)
 
 	// HIT ARTICLE random body word of newly created
 	words := S.Split(articleIn.Body, ` `)
@@ -213,7 +227,7 @@ func TestApis(t *testing.T) {
 	}
 	searchOut = getApi(t, handler.Article, c, searchIn, nil)
 	hits = searchOut.GetAX(`hits`)
-	if len(hits) == 0 {
+	if len(hits) != 0 {
 		t.Fatal(`querying cached should return at least 1, =============== from cache should show on the server`)
 	}
 }

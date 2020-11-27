@@ -56,6 +56,7 @@ curl -X GET 'http://localhost:7700/indexes/articles/updates'
 - [ ] expire the search cache
 - [ ] wait for index to be created in test [issue-ref](https://github.com/meilisearch/meilisearch-go/issues/108), workaround: create an empty document for the first time
 - [ ] add more DEBUG flags before production
+- [ ] add expiration daemon (so can have TTL like redis/aerospike)
 
 ## dependencies
 

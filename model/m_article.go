@@ -116,6 +116,8 @@ func (a *Article) Search(s *config.Stor, in *ArticleSearchIn) string {
 	if L.IsError(err, `failed to convert json from search engine`) {
 		return `{"error":"failed convert json"}`
 	}
-	c.Set(s.Taran, cacheKey, string(json))
+	if len(res.Hits) > 0 {
+		c.Set(s.Taran, cacheKey, string(json))
+	}
 	return string(json)
 }
