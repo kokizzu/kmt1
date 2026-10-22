@@ -1,6 +1,6 @@
 module kmt1
 
-go 1.14
+go 1.26.10
 
 require (
 	github.com/bxcodec/faker/v3 v3.5.0
