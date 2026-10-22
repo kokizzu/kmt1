@@ -67,26 +67,43 @@ func (d *Decoder) RegisterConverter(value interface{}, converterFunc Converter) 
 // Keys are "paths" in dotted notation to the struct fields and nested structs.
 //
 // See the package documentation for a full explanation of the mechanics.
-func (d *Decoder) Decode(dst interface{}, src map[string][]string) error {
+func (d *Decoder) Decode(dst interface{}, src map[string][]string) (err error) {
 	v := reflect.ValueOf(dst)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
 		return errors.New("schema: interface must be a pointer to struct")
 	}
+
+	// Catch panics from the decoder and return them as an error.
+	// This is needed because the decoder calls reflect and reflect panics
+	defer func() {
+		if r := recover(); r != nil {
+			if e, ok := r.(error); ok {
+				err = e
+			} else {
+				err = fmt.Errorf("schema: panic while decoding: %v", r)
+			}
+		}
+	}()
+
 	v = v.Elem()
 	t := v.Type()
-	errors := MultiError{}
+	multiError := MultiError{}
 	for path, values := range src {
 		if parts, err := d.cache.parsePath(path, t); err == nil {
 			if err = d.decode(v, path, parts, values); err != nil {
-				errors[path] = err
+				multiError[path] = err
 			}
-		} else if !d.ignoreUnknownKeys {
-			errors[path] = UnknownKeyError{Key: path}
+		} else {
+			if errors.Is(err, errIndexTooLarge) {
+				multiError[path] = err
+			} else if !d.ignoreUnknownKeys {
+				multiError[path] = UnknownKeyError{Key: path}
+			}
 		}
 	}
-	errors.merge(d.checkRequired(t, src))
-	if len(errors) > 0 {
-		return errors
+	multiError.merge(d.checkRequired(t, src))
+	if len(multiError) > 0 {
+		return multiError
 	}
 	return nil
 }
@@ -157,7 +174,20 @@ func isEmptyFields(fields []fieldWithPrefix, src map[string][]string) bool {
 				return false
 			}
 			for key := range src {
-				if !isEmpty(f.typ, src[key]) && strings.HasPrefix(key, path) {
+				// issue references:
+				// https://github.com/gofiber/fiber/issues/1414
+				// https://github.com/gorilla/schema/issues/176
+				nested := strings.IndexByte(key, '.') != -1
+
+				// for non required nested structs
+				c1 := strings.HasSuffix(f.prefix, ".") && key == path
+
+				// for required nested structs
+				c2 := f.prefix == "" && nested && strings.HasPrefix(key, path)
+
+				// for non nested fields
+				c3 := f.prefix == "" && !nested && key == path
+				if !isEmpty(f.typ, src[key]) && (c1 || c2 || c3) {
 					return false
 				}
 			}
@@ -193,7 +223,7 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 		if v.Type().Kind() == reflect.Struct {
 			for i := 0; i < v.NumField(); i++ {
 				field := v.Field(i)
-				if field.Type().Kind() == reflect.Ptr && field.IsNil() && v.Type().Field(i).Anonymous == true {
+				if field.Type().Kind() == reflect.Ptr && field.IsNil() && v.Type().Field(i).Anonymous {
 					field.Set(reflect.New(field.Type().Elem()))
 				}
 			}

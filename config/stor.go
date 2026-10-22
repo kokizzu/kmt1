@@ -30,8 +30,8 @@ func InitStore() *Stor {
 		APIKey: meiliKey,
 	})
 
-	s.Taran = &adapter.Taran{taranConn, s.Log}
-	s.Meili = &adapter.Meili{meiliClient, s.Log}
+	s.Taran = &adapter.Taran{Connection: taranConn, Log: s.Log}
+	s.Meili = &adapter.Meili{ClientInterface: meiliClient, Log: s.Log}
 	return s
 }
 
